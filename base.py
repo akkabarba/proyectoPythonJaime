@@ -2,75 +2,110 @@ import requests
 import tkinter as tk
 from tkinter import messagebox, scrolledtext
 
-# URL de la API de PokeAPI
-url = 'https://pokeapi.co/api/v2/pokemon'
+BASE_URL = 'https://swapi.dev/api' # API que estamos utilizando
 
-def descargar_datos(url):
-    """Descarga los datos JSON de la API, gestionando la paginación."""
-    pokemon_list = []
-    next_url = url
+def obtener_personajes(): # Nos devuelve una lista de los primeros 10 personajes, es así por defecto y así no sobrecargamos
+    """Obtiene una lista de personajes de Star Wars."""
+    response = requests.get(f'{BASE_URL}/people/')
+    response.raise_for_status()
+    return response.json()['results']
 
-    while next_url:
-        response = requests.get(next_url)
-        response.raise_for_status()  # Lanza un error si la respuesta es un error HTTP
-        data = response.json()
-        
-        # Agrega los Pokémon de la página actual a la lista
-        pokemon_list.extend(data['results'])
+def obtener_naves(): # Nos devuelve una lista de las primeros 10 naves, es así por defecto y así no sobrecargamos
+    """Obtiene una lista de naves de Star Wars."""
+    response = requests.get(f'{BASE_URL}/starships/')
+    response.raise_for_status()
+    return response.json()['results']
 
-        # Actualiza next_url para la próxima página
-        next_url = data['next']
+def obtener_planetas(): # Nos devuelve una lista de los primeros 10 planetas, es así por defecto y así no sobrecargamos
+    """Obtiene una lista de planetas de Star Wars."""
+    response = requests.get(f'{BASE_URL}/planets/')
+    response.raise_for_status()
+    return response.json()['results']
 
-    return pokemon_list
+def info_personaje(nombre_personaje):
+    """Obtiene toda la información de un personaje en función de su nombre"""
+    response = requests.get(f'{BASE_URL}/people/?search={nombre_personaje}')
+    response.raise_for_status()
+    resultados = response.json()['results']
+    if resultados:
+        return resultados[0]  # Devuelve el primer personaje encontrado
+    return None
 
-class PokeApp:
-    def __init__(self, master):
-        self.master = master
-        self.master.title("PokeAPI App")
-        
-        self.pokemon_list = descargar_datos(url)
+def info_nave(nombre_nave):
+    """Obtiene toda la información de una nave en función de su nombre"""
+    response = requests.get(f'{BASE_URL}/starships/?search={nombre_nave}')
+    response.raise_for_status()
+    resultados = response.json()['results']
+    if resultados:
+        return resultados[0]  # Devuelve la primera nave encontrada
+    return None
 
-        # Etiquetas y entradas
-        self.label_search = tk.Label(master, text="Buscar Pokémon:")
-        self.label_search.pack()
-        self.entry_search = tk.Entry(master)
-        self.entry_search.pack()
+def info_planeta(nombre_planeta):
+    """Obtiene toda la información de un planeta en función de su nombre"""
+    response = requests.get(f'{BASE_URL}/planets/?search={nombre_planeta}')
+    response.raise_for_status()
+    resultados = response.json()['results']
+    if resultados:
+        return resultados[0] # Devuelve el primer planeta encontrado
+    return None
 
-        self.button_search = tk.Button(master, text="Buscar", command=self.buscar_pokemon)
-        self.button_search.pack()
+def mostrar_info_personaje(personaje):
+    """Muestra toda la información disponible de un personaje."""
+    print(f"\nInformación del personaje:")
+    print(f"Nombre: {personaje['name']}")
+    print(f"Altura: {personaje['height']} cm")
+    print(f"Peso: {personaje['mass']} kg")
+    print(f"Color de cabello: {personaje['hair_color']}")
+    print(f"Color de piel: {personaje['skin_color']}")
+    print(f"Color de ojos: {personaje['eye_color']}")
+    print(f"Año de nacimiento: {personaje['birth_year']}")
+    print(f"Género: {personaje['gender']}")
+    print(f"\nPelículas en las que aparece {personaje['name']}:")
+    for pelicula in personaje['films']: # Este for nos devuelve los nombre de las películas en las que aparece el personaje introducido
+        titulo_pelicula = obtener_titulo_pelicula(pelicula)
+        print(f"- {titulo_pelicula}")
 
-        self.label_filter = tk.Label(master, text="Filtrar Pokémon por inicial:")
-        self.label_filter.pack()
-        self.entry_filter = tk.Entry(master)
-        self.entry_filter.pack()
+def obtener_titulo_pelicula(url_pelicula):
+    """Obtiene el título de una película a partir de su URL."""
+    response = requests.get(url_pelicula)
+    response.raise_for_status()
+    return response.json()['title']
 
-        self.button_filter = tk.Button(master, text="Filtrar", command=self.filtrar_pokemon)
-        self.button_filter.pack()
+def mostrar_info_planeta(planeta):
+    """Muestra toda la información disponible de un planeta."""
+    print(f"Nombre: {planeta['name']}")
+    print(f"Periodo de rotación: {planeta['rotation_period']}")
+    print(f"Periodo orbital: {planeta['orbital_period']}")
+    print(f"Diametro: {planeta['diameter']}")
+    print(f"Clima: {planeta['climate']}")
+    print(f"Gravedad: {planeta['gravity']}")
+    print(f"Terreno: {planeta['terrain']}")
+    print(f"Superficie acuática: {planeta['surface_water']}")
+    print(f"Población: {planeta['population']}")
+    print(f"\nHabitantes populares de {planeta['name']}:")
+    for habitante in planeta['residents']: # Este for nos devuelve los nombre de los habitantes más importantes del planeta introducido
+        nombre_habitante = obtener_nombre_habitante(habitante)
+        print(f"- {nombre_habitante}")
 
-        self.text_area = scrolledtext.ScrolledText(master, wrap=tk.WORD, width=50, height=15)
-        self.text_area.pack()
+def obtener_nombre_habitante(url_habitante):
+    """Obtiene los habitantes de un planeta a partir de su URL"""
+    response = requests.get(url_habitante)
+    response.raise_for_status()
+    return response.json()['name']
 
-    def buscar_pokemon(self):
-        name = self.entry_search.get().lower()
-        pokemon = next((p for p in self.pokemon_list if p['name'] == name), None)
-        if pokemon:
-            self.text_area.insert(tk.END, f"Pokémon encontrado: {pokemon['name']}\n")
-        else:
-            messagebox.showinfo("No encontrado", "Pokémon no encontrado.")
-
-    def filtrar_pokemon(self):
-        initial = self.entry_filter.get().lower()
-        filtered = [p for p in self.pokemon_list if p['name'].startswith(initial)]
-        
-        self.text_area.delete(1.0, tk.END)  # Limpiar el área de texto
-        if filtered:
-            for pokemon in filtered:
-                self.text_area.insert(tk.END, f"{pokemon['name']}\n")
-        else:
-            messagebox.showinfo("No encontrado", "No se encontraron Pokémon que comiencen con esa letra.")
-
-# Crear la ventana principal
-if __name__ == '__main__':
-    root = tk.Tk()
-    app = PokeApp(root)
-    root.mainloop()
+def mostrar_info_nave(nave):
+    """Muestra toda la información disponible de una nave."""
+    print(f"\nInformación de la nave:")
+    print(f"Nombre: {nave['name']}")
+    print(f"Modelo: {nave['model']}")
+    print(f"Manufacturador: {nave['manufacturer']}")
+    print(f"Precio: {nave['cost_in_credits']}")
+    print(f"Longitud: {nave['length']}")
+    print(f"Máxima velocidad atmosféreica: {nave['max_atmosphering_speed']}")
+    print(f"Tripulantes: {nave['crew']}")
+    print(f"Pasajeros: {nave['passengers']}")
+    print(f"Capacidad de carga: {nave['cargo_capacity']}")
+    print(f"Consumibles: {nave['consumables']}")
+    print(f"Hipervelocidad: {nave['hyperdrive_rating']}")
+    print(f"Megaluz por hora: {nave['MGLT']}")
+    print(f"Clase de nave: {nave['starship_class']}")
