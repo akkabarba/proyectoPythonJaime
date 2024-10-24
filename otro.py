@@ -14,7 +14,7 @@ def obtener_naves(): # Nos devuelve una lista de las primeros 10 naves, es así 
     response.raise_for_status()
     return response.json()['results']
 
-def obtener_planetas(): # Nos devuelve una lista de los primeros 10 planetas, es así por defecto y así no sobrecargamos
+def obtener_planetas(): # Nos devuelve una lista de los primeros 10 personajes, es así por defecto y así no sobrecargamos
     """Obtiene una lista de planetas de Star Wars."""
     response = requests.get(f'{BASE_URL}/planets/')
     response.raise_for_status()
